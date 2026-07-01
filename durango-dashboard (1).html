@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>City of Durango — Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#1E1E1E;
+    --forest:#006A53;
+    --forest-dark:#004E3D;
+    --teal:#1B8A79;
+    --sage:#7FB4A9;
+    --mist:#EAF2EF;
+    --paper:#FBFCFB;
+    --line:#DCE6E2;
+    --slate:#5B6B67;
+    --white:#FFFFFF;
+    --radius:10px;
+    /* framework legend colors — carried over from the source framework diagram */
+    --fw-gold:#D9A441;
+    --fw-blue:#2F86D1;
+    --fw-purple:#9B7FC9;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Aptos','Segoe UI Variable','Segoe UI',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+  button{font-family:inherit;}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:0 28px 64px;}
+
+  /* ---------- Header ---------- */
+  header{
+    background:var(--forest); color:var(--white);
+    padding:20px 28px; display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:16px; border-bottom:3px solid var(--forest-dark);
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .mark{width:40px;height:40px;flex:none;}
+  .brand-text{line-height:1.15;}
+  .brand-text .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--sage);}
+  .brand-text .title{font-size:19px;font-weight:700;letter-spacing:.01em;}
+  .header-right{display:flex;align-items:center;gap:14px;}
+  .datepill{font-size:12.5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);padding:7px 14px;border-radius:100px;}
+  .livepill{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    background:rgba(127,180,169,.22);border:1px solid var(--sage);color:var(--sage);padding:7px 14px;border-radius:100px;}
+  .livepill .dot{width:7px;height:7px;border-radius:50%;background:var(--sage);animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(1.3);}}
+
+  .titleband{padding:36px 0 8px;}
+  .titleband .eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;}
+  .titleband h1{font-size:clamp(26px,3.4vw,38px);font-weight:700;margin:0 0 6px;color:var(--forest-dark);letter-spacing:-.01em;}
+  .titleband p{margin:0;color:var(--slate);font-size:15px;max-width:680px;line-height:1.5;}
+
+  /* ---------- Load / error states ---------- */
+  #load-state{max-width:1280px;margin:0 auto;padding:60px 28px;text-align:center;color:var(--slate);font-size:14px;}
+  #error-state{display:none;max-width:720px;margin:40px auto;padding:20px 24px;border:1px solid #E7C9BE;background:#FBF1EE;border-radius:10px;color:#8A3B2B;font-size:13.5px;line-height:1.6;}
+  #error-state code{background:#fff;padding:1px 6px;border-radius:4px;border:1px solid #E7C9BE;}
+  #dashboard{display:none;}
+
+  /* ---------- KPI cards ---------- */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:22px;}
+  @media (max-width:900px){ .kpi-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:540px){ .kpi-grid{grid-template-columns:1fr;} }
+  .kpi-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:20px 20px 18px;position:relative;overflow:hidden;}
+  .kpi-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent,var(--forest));}
+  .kpi-card .label{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);margin-bottom:10px;}
+  .kpi-card .value{font-size:32px;font-weight:700;color:var(--ink);line-height:1;letter-spacing:-.01em;}
+  .kpi-card .sub{margin-top:10px;font-size:13px;display:flex;align-items:center;gap:6px;color:var(--slate);}
+  .delta{font-weight:700;padding:2px 7px;border-radius:5px;font-size:12px;}
+  .delta.up{color:var(--forest-dark);background:var(--mist);}
+
+  /* ---------- Section headings ---------- */
+  .section{margin-top:44px;}
+  .section-head{margin-bottom:16px;}
+  .section-head .eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:6px;}
+  .section-head h2{margin:0 0 6px;font-size:23px;font-weight:700;color:var(--forest-dark);letter-spacing:-.01em;}
+  .section-head p{margin:0;color:var(--slate);font-size:14px;max-width:680px;line-height:1.5;}
+
+  /* ---------- Framework diagram ---------- */
+  .framework{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--white);}
+  .framework-bar{background:var(--forest);color:var(--white);padding:22px 28px;font-size:20px;font-weight:700;letter-spacing:.02em;}
+  .framework-body{padding:36px 28px 30px;position:relative;}
+  .fw-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;grid-template-rows:auto auto;column-gap:14px;row-gap:52px;position:relative;max-width:920px;}
+  .fw-box{
+    border:2px solid var(--fw-blue); border-radius:6px; padding:14px 10px; text-align:center;
+    font-weight:700; font-size:15px; color:var(--forest-dark); background:var(--white);
+    cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; line-height:1.25;
+  }
+  .fw-box:hover{transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,106,83,.14);}
+  .fw-box.gold{border-color:var(--fw-gold);}
+  .fw-row{display:flex;align-items:center;gap:10px;position:relative;}
+  .fw-arrow{flex:none;color:var(--forest-dark);font-size:15px;}
+  .fw-divider{
+    position:absolute; left:0; right:0; top:calc(50% - 26px);
+    border-top:3px dashed var(--forest-dark); z-index:0;
+  }
+  .fw-labels{position:absolute; right:-6px; top:calc(50% - 66px); display:flex; flex-direction:column; gap:44px; font-size:14px; font-weight:600; color:var(--fw-purple);}
+  .fw-legend{position:absolute; top:36px; right:28px; width:210px; font-size:12.5px; color:var(--forest-dark); display:flex; flex-direction:column; gap:16px;}
+  .fw-legend .li{display:flex; gap:10px; align-items:flex-start;}
+  .fw-legend .swatch{width:16px;height:16px;border:2px solid var(--fw-gold);border-radius:3px;flex:none;margin-top:1px;}
+  .fw-legend .swatch.blue{border-color:var(--fw-blue);}
+  .fw-legend .arrow-key{font-size:14px; color:var(--forest-dark);}
+  @media (max-width:920px){ .fw-legend{position:static; width:auto; margin-top:28px; flex-direction:row; flex-wrap:wrap;} .fw-grid{max-width:none;} }
+  @media (max-width:640px){
+    .fw-grid{grid-template-columns:1fr; row-gap:14px;}
+    .fw-row{flex-direction:column;}
+    .fw-arrow{transform:rotate(90deg);}
+    .fw-divider,.fw-labels{display:none;}
+  }
+
+  /* ---------- Goal filter chips ---------- */
+  .goal-bar{display:flex; flex-wrap:wrap; gap:10px; margin-top:20px;}
+  .goal-chip-btn{
+    display:flex; align-items:center; gap:8px;
+    border:1.5px solid var(--line); background:var(--white); color:var(--ink);
+    padding:9px 14px 9px 10px; border-radius:100px; font-size:13px; font-weight:600; cursor:pointer;
+    transition:all .15s ease;
+  }
+  .goal-chip-btn .swatch{width:10px;height:10px;border-radius:50%;flex:none;}
+  .goal-chip-btn .count{color:var(--slate); font-weight:600;}
+  .goal-chip-btn.active{border-color:transparent; color:#fff;}
+  .goal-chip-btn.reset{font-style:italic;}
+
+  /* ---------- Drill-down columns ---------- */
+  .drill-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:22px;}
+  @media (max-width:900px){ .drill-grid{grid-template-columns:1fr;} }
+  .drill-col{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .drill-col-head{padding:16px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .drill-col-head .tag{font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--fw-purple);}
+  .drill-col-head h3{margin:2px 0 0; font-size:16px; font-weight:700; color:var(--forest-dark);}
+  .drill-col-body{padding:8px 12px 14px;}
+
+  .node-item{border-bottom:1px solid var(--line);}
+  .node-item:last-child{border-bottom:none;}
+  .node-header{
+    width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:none; border:none; padding:14px 8px; cursor:pointer; text-align:left;
+  }
+  .node-header .left{display:flex; align-items:center; gap:10px;}
+  .node-header .box-tag{
+    font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    border:1.5px solid var(--fw-blue); color:var(--fw-blue); border-radius:5px; padding:2px 7px;
+  }
+  .node-header .name{font-size:14.5px; font-weight:700; color:var(--ink);}
+  .node-header .meta{font-size:12px; color:var(--slate);}
+  .node-header .chevron{transition:transform .2s ease; color:var(--slate); font-size:13px;}
+  .node-item.open .chevron{transform:rotate(180deg);}
+  .node-body{max-height:0; overflow:hidden; transition:max-height .28s ease;}
+  .node-item.open .node-body{max-height:1400px;}
+
+  .leaf-card{
+    margin:0 8px 10px; padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:var(--mist);
+    transition:opacity .2s ease;
+  }
+  .leaf-card.dimmed{opacity:.28;}
+  .leaf-top{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
+  .leaf-top .box-tag{
+    font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    border:1.5px solid var(--fw-gold); color:#9C6E1F; border-radius:5px; padding:2px 6px; flex:none;
+  }
+  .leaf-name{font-size:13.5px; font-weight:700; color:var(--ink);}
+  .goal-chip{
+    font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:100px; white-space:nowrap;
+  }
+  .goal-chip.none{background:var(--line); color:var(--slate); font-weight:600;}
+  .obj-line{font-size:11.5px; color:var(--slate); margin-bottom:8px; display:flex; align-items:center; gap:6px;}
+  .obj-line .box-tag-mini{font-size:9.5px; font-weight:700; border:1.5px solid var(--fw-blue); color:var(--fw-blue); border-radius:4px; padding:1px 5px;}
+  .measure-list{display:flex; flex-wrap:wrap; gap:8px 18px;}
+  .measure{font-size:12.5px;}
+  .measure .mlabel{color:var(--slate); margin-right:5px;}
+  .measure .mval{font-weight:700; color:var(--forest-dark);}
+
+  /* ---------- Snapshot panel row ---------- */
+  .grid-2{display:grid; grid-template-columns:1.4fr 1fr; gap:16px; margin-top:16px;}
+  @media (max-width:900px){ .grid-2{grid-template-columns:1fr;} }
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:22px;}
+  .panel h2{margin:0 0 2px; font-size:15.5px; font-weight:700; color:var(--forest-dark);}
+  .panel .panel-sub{margin:0 0 16px; font-size:12.5px; color:var(--slate);}
+  .coverage-stat{display:flex; align-items:baseline; gap:8px; margin-bottom:4px;}
+  .coverage-stat .big{font-size:30px; font-weight:700; color:var(--forest-dark);}
+  .coverage-stat .lbl{font-size:12.5px; color:var(--slate);}
+  .coverage-row{display:flex; justify-content:space-between; padding:14px 0; border-top:1px solid var(--line);}
+  .coverage-row:first-of-type{border-top:none;}
+
+  /* ---------- Footer ---------- */
+  footer{margin-top:44px; position:relative;}
+  .footer-panel{background:var(--forest-dark); color:var(--white); border-radius:var(--radius); padding:36px 32px 0; overflow:hidden; position:relative;}
+  .footer-inner{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:24px; position:relative; z-index:2; padding-bottom:24px;}
+  .footer-inner h3{margin:0 0 8px; font-size:16px; font-weight:700;}
+  .footer-inner p{margin:0; font-size:13px; color:var(--sage); max-width:360px; line-height:1.6;}
+  .contact-grid{display:grid; grid-template-columns:repeat(2,auto); gap:8px 40px; font-size:13px;}
+  .contact-grid div span{display:block; color:var(--sage); font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; margin-bottom:3px;}
+  .footer-mountains{display:block; width:100%; height:110px; position:relative; z-index:1;}
+  .footer-note{text-align:center; font-size:11.5px; color:var(--slate); margin-top:16px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <polygon points="4,34 14,14 24,34" fill="#7FB4A9"/>
+      <polygon points="14,34 24,10 34,34" fill="#1B8A79"/>
+      <polygon points="24,34 32,18 40,34" fill="#EAF2EF"/>
+    </svg>
+    <div class="brand-text">
+      <div class="eyebrow">City of Durango</div>
+      <div class="title">Performance Dashboard</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="datepill" id="today-pill">Loading date…</span>
+    <span class="livepill"><span class="dot"></span>Sample Data</span>
+  </div>
+</header>
+
+<div id="load-state">Loading dashboard data…</div>
+<div id="error-state"></div>
+
+<div class="wrap" id="dashboard">
+
+  <div class="titleband">
+    <div class="eyebrow" id="period-label">FY2026 · Quarterly Snapshot</div>
+    <h1>How Durango is performing, mapped to our measurement framework.</h1>
+    <p>Every metric below rolls up through Key Services and Programs to a Strategic Plan Goal, so operational work stays connected to policy priorities. Figures shown are illustrative sample data.</p>
+  </div>
+
+  <!-- CITY SNAPSHOT -->
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <!-- FRAMEWORK DIAGRAM -->
+  <div class="section">
+    <div class="framework">
+      <div class="framework-bar">MEASUREMENT FRAMEWORK</div>
+      <div class="framework-body">
+        <div class="fw-grid" id="fw-grid">
+          <div class="fw-divider"></div>
+          <div class="fw-labels"><span>Policy</span><span>Operational</span></div>
+
+          <div class="fw-row" style="grid-column:1 / 3;">
+            <div class="fw-box" data-jump="goals">Strategic<br>Plan Goals</div>
+            <span class="fw-arrow">⟵┄</span>
+            <div class="fw-box" data-jump="objectives">Objectives</div>
+          </div>
+          <div style="grid-column:3 / 5;"></div>
+
+          <div class="fw-row" style="grid-column:1 / 5;">
+            <div class="fw-box" data-jump="worksystems">Work<br>Systems</div>
+            <span class="fw-arrow">⟵</span>
+            <div class="fw-box gold" data-jump="keyservices">Key<br>Services</div>
+            <span class="fw-arrow">⟵┄</span>
+            <div class="fw-box gold" data-jump="programs">Programs</div>
+          </div>
+        </div>
+
+        <div class="fw-legend">
+          <div class="li"><span class="swatch"></span><span>= distinct set of measures</span></div>
+          <div class="li"><span class="swatch blue"></span><span>= aggregate or summary of yellow box measures</span></div>
+          <div class="li"><span class="arrow-key">⟵┄</span><span>= alignment, ability to drill down</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGIC GOAL FILTER + COVERAGE -->
+  <div class="section" id="goals">
+    <div class="section-head">
+      <div class="eyebrow">Policy · Strategic Plan Goals</div>
+      <h2>Filter by goal area</h2>
+      <p>Select a goal to highlight the Key Services and Programs that align to it across every Work System.</p>
+    </div>
+
+    <div class="goal-bar" id="goal-bar"></div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h2>Alignment coverage</h2>
+        <p class="panel-sub">How operational and policy work ladders up to goals</p>
+        <div class="coverage-row">
+          <div class="coverage-stat"><span class="big" id="cov-ks">–</span><span class="lbl">of Key Services<br>tied to a Strategic Plan Goal</span></div>
+        </div>
+        <div class="coverage-row">
+          <div class="coverage-stat"><span class="big" id="cov-p">–</span><span class="lbl">of Programs<br>tied to an Objective &amp; Goal</span></div>
+        </div>
+        <div class="coverage-row">
+          <div class="coverage-stat"><span class="big" id="cov-goals">–</span><span class="lbl">active Strategic<br>Plan Goal areas</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Population Growth</h2>
+        <p class="panel-sub">Residents, by year</p>
+        <canvas id="popChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRILL DOWN -->
+  <div class="section">
+    <div class="section-head">
+      <div class="eyebrow">Drill Down</div>
+      <h2>From daily work to strategic outcomes</h2>
+      <p>Expand a Work System to see its Key Services, or an Objective to see its Programs — each shows its Strategic Plan Goal alignment when applicable.</p>
+    </div>
+
+    <div class="drill-grid">
+      <div class="drill-col" id="worksystems">
+        <div class="drill-col-head">
+          <div><div class="tag">Operational</div><h3>Work Systems → Key Services</h3></div>
+        </div>
+        <div class="drill-col-body" id="ws-list"></div>
+      </div>
+
+      <div class="drill-col" id="programs">
+        <div class="drill-col-head">
+          <div><div class="tag">Policy-Linked</div><h3>Objectives → Programs</h3></div>
+        </div>
+        <div class="drill-col-body" id="prog-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-panel">
+      <div class="footer-inner">
+        <div>
+          <h3>City of Durango</h3>
+          <p>Public Information Office · 949 E. 2nd Avenue, Durango, CO 81301</p>
+        </div>
+        <div class="contact-grid">
+          <div><span>Phone</span>(970) 375-5090</div>
+          <div><span>Website</span>durangoco.gov</div>
+          <div><span>Email</span>durangopio@durangoco.gov</div>
+          <div><span>Dashboard data</span>Illustrative sample only</div>
+        </div>
+      </div>
+      <svg class="footer-mountains" viewBox="0 0 1200 110" preserveAspectRatio="none" aria-hidden="true">
+        <polygon points="0,110 0,70 120,20 260,80 400,10 560,75 700,35 860,90 1000,25 1120,65 1200,40 1200,110" fill="#7FB4A9" opacity="0.35"/>
+        <polygon points="0,110 0,90 150,45 300,95 460,40 620,95 780,55 940,100 1100,50 1200,80 1200,110" fill="#1B8A79" opacity="0.55"/>
+        <polygon points="0,110 0,105 200,75 380,105 560,65 760,105 950,80 1200,105 1200,110" fill="#004E3D" opacity="0.9"/>
+      </svg>
+    </div>
+    <p class="footer-note">City of Durango Brand Guidelines · Sample dashboard for internal review</p>
+  </footer>
+
+</div>
+
+<script>
+/* =========================================================
+   All framework content (goals, objectives, programs, work
+   systems, key services, KPIs) lives in data.json — this
+   file only contains layout and rendering logic.
+   ========================================================= */
+
+let DATA = null;
+let activeGoals = new Set();
+
+async function loadData(){
+  try{
+    const res = await fetch('data.json', { cache: 'no-store' });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    DATA = await res.json();
+    document.getElementById('load-state').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    init();
+  } catch(err){
+    document.getElementById('load-state').style.display = 'none';
+    const box = document.getElementById('error-state');
+    box.style.display = 'block';
+    box.innerHTML = `
+      <strong>Couldn't load data.json.</strong><br><br>
+      This usually means the page was opened directly as a file (e.g. double-clicked from Finder/Explorer),
+      which browsers block from fetching local files for security reasons.<br><br>
+      Fix: serve the folder over a local server, for example run
+      <code>python3 -m http.server</code> in the project folder and open
+      <code>http://localhost:8000/durango-dashboard.html</code> — or publish it with GitHub Pages, which
+      serves files over HTTP and works correctly.<br><br>
+      <em>Technical detail: ${err.message}</em>
+    `;
+  }
+}
+
+function goalById(id){ return DATA.goals.find(g=>g.id===id); }
+
+function goalChipHTML(goalId){
+  if(!goalId) return `<span class="goal-chip none">Not directly aligned</span>`;
+  const g = goalById(goalId);
+  return `<span class="goal-chip" style="background:${g.color};color:${g.text}">${g.name}</span>`;
+}
+
+/* ---------- KPI cards ---------- */
+function renderKPIs(){
+  const grid = document.getElementById('kpi-grid');
+  grid.innerHTML = DATA.kpis.map(k=>{
+    let valueHTML;
+    if(k.format === 'number'){
+      valueHTML = `<span data-count="${k.value}" data-suffix="${k.valueSuffix||''}">0</span>`;
+    } else if(k.format === 'percent'){
+      valueHTML = `<span data-count="${k.value}" data-suffix="%">0%</span>`;
+    } else {
+      valueHTML = `${k.value}${k.valueSuffix ? `<span style="font-size:16px;font-weight:600;">${k.valueSuffix}</span>` : ''}`;
+    }
+    return `
+      <div class="kpi-card" style="--accent:${k.accent || '#006A53'}">
+        <div class="label">${k.label}</div>
+        <div class="value">${valueHTML}</div>
+        <div class="sub"><span class="delta up">${k.deltaDirection==='up'?'▲':'▼'} ${k.deltaText}</span> ${k.deltaNote}</div>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('[data-count]').forEach(el=>{
+    const target = parseFloat(el.dataset.count);
+    const suffix = el.dataset.suffix || '';
+    const duration = 1100;
+    const start = performance.now();
+    function tick(now){
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * eased).toLocaleString('en-US') + suffix;
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+/* ---------- Goal filter bar ---------- */
+function renderGoalBar(){
+  const bar = document.getElementById('goal-bar');
+  const resetBtn = `<button class="goal-chip-btn reset" data-goal="__all__">Show all</button>`;
+  const chips = DATA.goals.map(g=>{
+    const count = DATA.keyServices.filter(k=>k.goal===g.id).length +
+                  DATA.programs.filter(p=>DATA.objectives.find(o=>o.id===p.objective).goal===g.id).length;
+    return `<button class="goal-chip-btn" data-goal="${g.id}" style="--gc:${g.color}">
+      <span class="swatch" style="background:${g.color}"></span>${g.name}
+      <span class="count">${count}</span>
+    </button>`;
+  }).join('');
+  bar.innerHTML = resetBtn + chips;
+
+  bar.addEventListener('click', e=>{
+    const btn = e.target.closest('.goal-chip-btn');
+    if(!btn) return;
+    const id = btn.dataset.goal;
+    if(id === '__all__'){
+      activeGoals.clear();
+    } else {
+      activeGoals.has(id) ? activeGoals.delete(id) : activeGoals.add(id);
+    }
+    updateActiveStates();
+    applyFilter();
+  });
+
+  updateActiveStates();
+}
+
+function updateActiveStates(){
+  document.querySelectorAll('.goal-chip-btn').forEach(btn=>{
+    const id = btn.dataset.goal;
+    if(id === '__all__'){
+      btn.classList.toggle('active', activeGoals.size===0);
+      btn.style.background = activeGoals.size===0 ? 'var(--forest-dark)' : '';
+      btn.style.borderColor = activeGoals.size===0 ? 'var(--forest-dark)' : '';
+      btn.style.color = activeGoals.size===0 ? '#fff' : '';
+      return;
+    }
+    const on = activeGoals.has(id);
+    btn.classList.toggle('active', on);
+    btn.style.background = on ? btn.style.getPropertyValue('--gc') : '';
+    btn.style.borderColor = on ? btn.style.getPropertyValue('--gc') : '';
+  });
+}
+
+function applyFilter(){
+  document.querySelectorAll('.leaf-card').forEach(card=>{
+    const g = card.dataset.goal || '';
+    const match = activeGoals.size===0 || activeGoals.has(g);
+    card.classList.toggle('dimmed', !match);
+  });
+  if(activeGoals.size>0){
+    document.querySelectorAll('.node-item').forEach(item=>{
+      const hasMatch = [...item.querySelectorAll('.leaf-card')].some(c=>!c.classList.contains('dimmed'));
+      item.classList.toggle('open', hasMatch);
+    });
+  }
+}
+
+/* ---------- Work Systems column ---------- */
+function renderWorkSystems(){
+  const list = document.getElementById('ws-list');
+  list.innerHTML = DATA.workSystems.map(ws=>{
+    const services = DATA.keyServices.filter(k=>k.workSystem===ws.id);
+    const body = services.map(k=>`
+      <div class="leaf-card" data-goal="${k.goal || ''}">
+        <div class="leaf-top">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="box-tag">Key Service</span>
+            <span class="leaf-name">${k.name}</span>
+          </div>
+          ${goalChipHTML(k.goal)}
+        </div>
+        <div class="measure-list">
+          ${k.measures.map(m=>`<span class="measure"><span class="mlabel">${m.label}</span><span class="mval">${m.value}</span></span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="node-item">
+        <button class="node-header">
+          <span class="left">
+            <span class="box-tag" style="border-color:var(--fw-blue);color:var(--fw-blue);">Work System</span>
+            <span class="name">${ws.name}</span>
+          </span>
+          <span class="meta">${services.length} key service${services.length!==1?'s':''} <span class="chevron">▾</span></span>
+        </button>
+        <div class="node-body">${body}</div>
+      </div>
+    `;
+  }).join('');
+
+  wireAccordions(list);
+}
+
+/* ---------- Programs column ---------- */
+function renderPrograms(){
+  const list = document.getElementById('prog-list');
+  list.innerHTML = DATA.objectives.map(ob=>{
+    const progs = DATA.programs.filter(p=>p.objective===ob.id);
+    if(progs.length===0) return '';
+    const body = progs.map(p=>`
+      <div class="leaf-card" data-goal="${ob.goal}">
+        <div class="leaf-top">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="box-tag">Program</span>
+            <span class="leaf-name">${p.name}</span>
+          </div>
+          ${goalChipHTML(ob.goal)}
+        </div>
+        <div class="obj-line"><span class="box-tag-mini">Objective</span>${ob.name}</div>
+        <div class="measure-list">
+          ${p.measures.map(m=>`<span class="measure"><span class="mlabel">${m.label}</span><span class="mval">${m.value}</span></span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="node-item">
+        <button class="node-header">
+          <span class="left">
+            <span class="box-tag" style="border-color:var(--fw-blue);color:var(--fw-blue);">Objective</span>
+            <span class="name">${ob.name}</span>
+          </span>
+          <span class="meta">${progs.length} program${progs.length!==1?'s':''} <span class="chevron">▾</span></span>
+        </button>
+        <div class="node-body">${body}</div>
+      </div>
+    `;
+  }).join('');
+
+  wireAccordions(list);
+}
+
+function wireAccordions(scope){
+  scope.querySelectorAll('.node-header').forEach(h=>{
+    h.addEventListener('click', ()=>{
+      h.closest('.node-item').classList.toggle('open');
+    });
+  });
+}
+
+/* ---------- Coverage stats ---------- */
+function renderCoverage(){
+  const ksAligned = DATA.keyServices.filter(k=>k.goal).length;
+  document.getElementById('cov-ks').textContent = `${ksAligned}/${DATA.keyServices.length}`;
+  document.getElementById('cov-p').textContent = `${DATA.programs.length}/${DATA.programs.length}`;
+  document.getElementById('cov-goals').textContent = DATA.goals.length;
+}
+
+/* ---------- Framework diagram jump links ---------- */
+function wireFrameworkJumps(){
+  document.querySelectorAll('[data-jump]').forEach(box=>{
+    box.addEventListener('click', ()=>{
+      const target = document.getElementById(box.dataset.jump);
+      if(target){
+        target.scrollIntoView({behavior:'smooth', block:'start'});
+        target.style.transition='box-shadow .3s ease';
+        target.style.boxShadow='0 0 0 3px var(--sage)';
+        setTimeout(()=>{ target.style.boxShadow=''; }, 1200);
+      }
+    });
+  });
+}
+
+/* ---------- Population chart ---------- */
+function renderPopChart(){
+  Chart.defaults.font.family = "'Aptos','Segoe UI',system-ui,sans-serif";
+  Chart.defaults.color = '#5B6B67';
+  new Chart(document.getElementById('popChart'), {
+    type: 'line',
+    data: {
+      labels: DATA.populationTrend.labels,
+      datasets: [{
+        data: DATA.populationTrend.data,
+        borderColor: '#006A53', backgroundColor:'rgba(0,106,83,0.10)',
+        fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#006A53', borderWidth:2.5
+      }]
+    },
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{grid:{color:'#EAF2EF'}, ticks:{callback:v=>v.toLocaleString()}}, x:{grid:{display:false}} } }
+  });
+}
+
+/* ---------- Init ---------- */
+function init(){
+  document.getElementById('today-pill').textContent =
+    new Date().toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+  if(DATA.meta && DATA.meta.period){
+    document.getElementById('period-label').textContent = DATA.meta.period;
+  }
+
+  renderKPIs();
+  renderGoalBar();
+  renderWorkSystems();
+  renderPrograms();
+  renderCoverage();
+  renderPopChart();
+  wireFrameworkJumps();
+}
+
+loadData();
+</script>
+
+</body>
+</html>
