@@ -267,7 +267,7 @@
   <!-- CITY SNAPSHOT (renders only if data.json includes a kpis array) -->
   <div class="kpi-grid" id="kpi-grid"></div>
 
-  <!-- ORGANIZATION AT A GLANCE -->
+   <!-- ORGANIZATION AT A GLANCE -->
   <div class="section">
     <div class="section-head">
       <div class="eyebrow">Organization</div>
@@ -277,7 +277,21 @@
     <div class="stat-grid" id="stat-grid"></div>
   </div>
 
-  <!-- MAIN ASK: WORK SYSTEM → KEY SERVICE → PROGRAM -->
+   <!-- STRATEGIC PLAN REFERENCE -->
+  <div class="section" id="goals">
+    <div class="section-head">
+      <div class="eyebrow">Policy</div>
+      <h2>Strategic Plan: Goals & Objectives</h2>
+      <p>The City's Strategic Plan goal areas and their supporting objectives, for reference alongside the operational structure above.</p>
+    </div>
+
+    <div class="drill-col">
+      <div class="drill-col-body" id="goal-tree" style="padding-top:8px;"></div>
+    </div>
+  </div>
+
+
+  <!-- WORK SYSTEM → KEY SERVICE → PROGRAM -->
   <div class="section" id="worksystems">
     <div class="section-head">
       <div class="eyebrow">Operational Structure</div>
@@ -294,20 +308,8 @@
     </div>
   </div>
 
-  <!-- STRATEGIC PLAN REFERENCE -->
-  <div class="section" id="goals">
-    <div class="section-head">
-      <div class="eyebrow">Policy</div>
-      <h2>Strategic Plan: Goals & Objectives</h2>
-      <p>The City's Strategic Plan goal areas and their supporting objectives, for reference alongside the operational structure above.</p>
-    </div>
-
-    <div class="drill-col">
-      <div class="drill-col-body" id="goal-tree" style="padding-top:8px;"></div>
-    </div>
-  </div>
-
-  <!-- Shared hover tooltip for status breakdown rows in the at-a-glance cards -->
+ 
+  <!-- Hover tooltip for status breakdown in at-a-glance cards -->
   <div class="hover-tooltip" id="hover-tooltip" role="tooltip"></div>
 
   <!-- DETAIL MODAL (shared by every Key Service / Program "Details" button) -->
