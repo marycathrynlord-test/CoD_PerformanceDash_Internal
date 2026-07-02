@@ -9,7 +9,7 @@
     { "id": "g3", "name": "Safety & Quality of Life", "color": "#7FB4A9", "text": "#fff" },
     { "id": "g4", "name": "Reliable Infrastructure and Community Connectivity", "color": "#476fb5", "text": "#fff" },
     { "id": "g5", "name": "Engaged and Informed Community", "color": "#d94849", "text": "#fff" },
-    { "id": "g6", "name": "Strategic Workforce Development", "color": "#867971", "text": "#fff" } 
+    { "id": "g6", "name": "Strategic Workforce Development", "color": "#867971", "text": "#fff" }
   ],
 
   "objectives": [
@@ -22,15 +22,13 @@
     { "id": "ob7", "name": "3.1 Public Safety and Emergency Services", "goal": "g3" },
     { "id": "ob8", "name": "3.2 Arts, Culture, and Recreation", "goal": "g3" },
     { "id": "ob9", "name": "3.3 Parks, Trails and Natural Lands", "goal": "g3" },
-    { "id": "ob10", "name": "4.1 Safe, Accessible Mobility", "goal": "g4" }, 
-    { "id": "ob11", "name": "4.2 Transportation Infrastructure Investment", "goal": "g4" }, 
-    { "id": "ob12", "name": "4.3 Water and Wastewater Systems", "goal": "g4" }, 
-    { "id": "ob13", "name": "4.4 Airport and Aviation Hubs", "goal": "g4" }, 
-    { "id": "ob14", "name": "5.1 Civic and Engaged Communication", "goal": "g5" }, 
+    { "id": "ob10", "name": "4.1 Safe, Accessible Mobility", "goal": "g4" },
+    { "id": "ob11", "name": "4.2 Transportation Infrastructure Investment", "goal": "g4" },
+    { "id": "ob12", "name": "4.3 Water and Wastewater Systems", "goal": "g4" },
+    { "id": "ob13", "name": "4.4 Airport and Aviation Hubs", "goal": "g4" },
+    { "id": "ob14", "name": "5.1 Civic and Engaged Communication", "goal": "g5" },
     { "id": "ob15", "name": "6.1 Employee Growth and Retention", "goal": "g6" }
   ],
-
-
 
   "workSystems": [
     { "id": "ws1", "name": "Leadership and Governance" },
@@ -49,35 +47,27 @@
     { "id": "ks5", "name": "Human Resources & Workforce Development", "workSystem": "ws2" },
     { "id": "ks6", "name": "Legal Services", "workSystem": "ws2" },
     { "id": "ks7", "name": "Information Technology Services", "workSystem": "ws2" },
-    { "id": "ks8", "name": "Community Development & Planning ", "workSystem": "ws3" },
+    { "id": "ks8", "name": "Community Development & Planning", "workSystem": "ws3" },
     { "id": "ks9", "name": "Economic Prosperity & Business Support", "workSystem": "ws3" },
     { "id": "ks10", "name": "Sustainability & Environmental Stewardship", "workSystem": "ws3" },
     { "id": "ks11", "name": "Public Safety Services", "workSystem": "ws4" },
     { "id": "ks12", "name": "Municipal Court", "workSystem": "ws4" },
-    { "id": "ks13", "name": "Public Works & Municipal Services ", "workSystem": "ws5" },
-    { "id": "ks14", "name": "Transit Services ", "workSystem": "ws5" },
+    { "id": "ks13", "name": "Public Works & Municipal Services", "workSystem": "ws5" },
+    { "id": "ks14", "name": "Transit Services", "workSystem": "ws5" },
     { "id": "ks15", "name": "Asset Management", "workSystem": "ws5" },
     { "id": "ks16", "name": "Airport Operations", "workSystem": "ws5" },
     { "id": "ks17", "name": "Library & Learning Services", "workSystem": "ws6" },
     { "id": "ks18", "name": "Parks & Open Space Management", "workSystem": "ws6" },
     { "id": "ks19", "name": "Recreation & Open Space Management", "workSystem": "ws6" }
-
   ],
 
-    "programs": [
-    { "id": "p1", "name": "Fixed-Route Service", "keyservice": "ks14"},
-    { "id": "p2", "name": "Paratransit", "keyservice": "ks14"},
-    { "id": "p3", "name": "Multimodal Programs", "keyservice": "ks14"},
-    { "id": "p4", "name": "Microtransit", "keyservice": "ks14"},
-    { "id": "p5", "name": "Transit Planning", "keyservice": "ks14"},
-    { "id": "p6", "name": "Fare Administration", "keyservice": "ks14"},
-    { "id": "p7", "name": "Parking Management", "keyservice": "ks14"}
-
-
-
-
-
-
-
+  "programs": [
+    { "id": "p1", "name": "Fixed-Route Service", "keyservice": "ks14" },
+    { "id": "p2", "name": "Paratransit", "keyservice": "ks14" },
+    { "id": "p3", "name": "Multimodal Programs", "keyservice": "ks14" },
+    { "id": "p4", "name": "Microtransit", "keyservice": "ks14" },
+    { "id": "p5", "name": "Transit Planning", "keyservice": "ks14" },
+    { "id": "p6", "name": "Fare Administration", "keyservice": "ks14" },
+    { "id": "p7", "name": "Parking Management", "keyservice": "ks14" }
   ]
 }
