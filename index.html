@@ -1,11 +1,9 @@
-/*INTERNAL DASHBOARD*/
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>City of Durango — Performance Dashboard</title>
+<title>City of Durango — Performance Dashboard - Community View</title>
 <style>
   :root{
     --ink:#1E1E1E;
@@ -212,15 +210,72 @@
   }
   .empty-note{margin:0 0 10px 30px; font-size:12px; color:var(--slate); font-style:italic;}
 
+  .align-tag{
+    font-size:10px; font-weight:600; color:var(--fw-purple);
+    background:rgba(155,127,201,0.12); border:1px solid rgba(155,127,201,0.35);
+    border-radius:100px; padding:2px 8px; white-space:nowrap; cursor:help;
+  }
+  .goal-subhead{font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--slate); padding:14px 8px 8px;}
+
+  .node-item.dimmed{opacity:.25; transition:opacity .2s ease;}
+  .leaf-card.dimmed{opacity:.25; transition:opacity .2s ease;}
+
+  /* ---------- Headline synthesis banner ---------- */
+  .headline-banner{
+    margin-top:22px; padding:18px 22px; border-radius:var(--radius);
+    background:var(--mist); border:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; font-size:15px; color:var(--ink);
+  }
+  .headline-banner.critical{ background:rgba(193,68,59,0.09); border-color:rgba(193,68,59,0.3); }
+  .headline-banner.caution{ background:rgba(217,164,65,0.12); border-color:rgba(217,164,65,0.35); }
+  .headline-banner.clear{ background:rgba(27,138,121,0.10); border-color:rgba(27,138,121,0.3); }
+  .headline-banner .hb-icon{font-size:22px; flex:none;}
+  .headline-banner strong{font-weight:700;}
+
+  /* ---------- Goal comparison strip (overview) ---------- */
+  .goal-summary-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px;}
+  @media (max-width:900px){ .goal-summary-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:600px){ .goal-summary-grid{grid-template-columns:1fr;} }
+  .goal-card{
+    text-align:left; background:var(--white); border:1px solid var(--line); border-top:4px solid var(--line);
+    border-radius:var(--radius); padding:16px; cursor:pointer; font-family:inherit;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .goal-card:hover, .goal-card:focus-visible{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,106,83,.10); outline:none; }
+  .goal-card-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px;}
+  .goal-card-name{font-size:13.5px; font-weight:700; color:var(--ink); line-height:1.3;}
+  .bar-track-wide{display:flex; width:100%; height:9px; border-radius:100px; overflow:hidden; background:var(--line); margin-bottom:10px;}
+  .bar-seg{height:100%; flex:none;}
+  .goal-card-meta{font-size:11.5px; color:var(--slate);}
+
+  /* ---------- Inline target metric ---------- */
+  .inline-metric{
+    font-size:11px; font-weight:700; color:var(--forest-dark);
+    background:var(--white); border:1px solid var(--line); border-radius:6px; padding:2px 8px; white-space:nowrap;
+  }
+  .inline-metric .im-target{font-weight:500; color:var(--slate);}
+
+  /* ---------- Dual status (Key Service view vs Program view of a Goal) ---------- */
+  .dual-status{display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center;}
+  .dual-status-item{display:flex; align-items:center; gap:6px;}
+  .dual-label{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--slate);}
+
+  /* ---------- Stale data flag ---------- */
+  .stale-flag{
+    font-size:10px; font-weight:700; color:#8A6414; background:rgba(217,164,65,0.16);
+    border:1px solid rgba(217,164,65,0.4); border-radius:100px; padding:2px 8px; white-space:nowrap;
+  }
+
+  /* ---------- Status definitions legend ---------- */
+  .status-defs{margin-top:16px; padding:16px 18px; background:var(--mist); border-radius:8px; font-size:12.5px; color:var(--slate); line-height:1.6;}
+  .status-defs dt{font-weight:700; color:var(--ink); display:inline;}
+  .status-defs dd{margin:0 0 6px; display:inline;}
+  .status-defs .def-row{margin-bottom:4px;}
+
   /* ---------- Strategic plan reference ---------- */
-  .goal-block{border-bottom:1px solid var(--line);}
-  .goal-block:last-child{border-bottom:none;}
-  .goal-head{display:flex; align-items:center; gap:10px; padding:14px 8px;}
-  .goal-dot{width:12px;height:12px;border-radius:50%;flex:none;}
-  .goal-head .name{font-size:14.5px; font-weight:700; color:var(--ink);}
-  .goal-head .count{font-size:12px; color:var(--slate); margin-left:auto;}
-  .obj-list{padding:0 8px 14px 32px; display:flex; flex-direction:column; gap:6px;}
-  .obj-list .obj{font-size:13px; color:var(--slate);}
+  /* goal-dot removed from the tree intentionally — goal branding color now
+     lives only in the summary cards below, so status color stays the one
+     dominant signal inside the detail tree. */
 
   /* ---------- Footer ---------- */
   footer{margin-top:44px; position:relative;}
@@ -244,7 +299,7 @@
     </svg>
     <div class="brand-text">
       <div class="eyebrow">City of Durango</div>
-      <div class="title">Performance Dashboard - Organizational View</div>
+      <div class="title">Performance Dashboard - Community View</div>
     </div>
   </div>
   <div class="header-right">
@@ -269,6 +324,19 @@
   <!-- CITY SNAPSHOT (renders only if data.json includes a kpis array) -->
   <div class="kpi-grid" id="kpi-grid"></div>
 
+  <!-- HEADLINE SYNTHESIS -->
+  <div class="headline-banner" id="headline-banner"></div>
+
+  <!-- GOAL COMPARISON STRIP (overview — click a card to jump to its detail below) -->
+  <div class="section" style="margin-top:28px;">
+    <div class="section-head">
+      <div class="eyebrow">Strategic Plan</div>
+      <h2>Goals at a glance, worst first</h2>
+      <p>Each bar shows the mix of On Track / At Risk / Off Track Key Services behind that Goal. Click a card to jump to its full detail below.</p>
+    </div>
+    <div class="goal-summary-grid" id="goal-summary"></div>
+  </div>
+
    <!-- ORGANIZATION AT A GLANCE -->
   <div class="section">
     <div class="section-head">
@@ -279,35 +347,27 @@
     <div class="stat-grid" id="stat-grid"></div>
   </div>
 
-   <!-- STRATEGIC PLAN REFERENCE -->
-  <div class="section" id="goals">
-    <div class="section-head">
-      <div class="eyebrow">Policy and Community Outcomes</div>
-      <h2>Strategic Plan: Goals & Objectives</h2>
-      <p>Our program work drives measurable results, and those results advance the Strategic Plan goals and objectives that move our community forward.</p>
-    </div>
-
-    <div class="drill-col">
-      <div class="drill-col-body" id="goal-tree" style="padding-top:8px;"></div>
-    </div>
-  </div>
-
-
-  <!-- WORK SYSTEM → KEY SERVICE → PROGRAM -->
+  <!-- STRATEGIC PLAN GOAL → KEY SERVICES & OBJECTIVES → PROGRAMS (single tree, rooted at policy level) -->
   <div class="section" id="worksystems">
     <div class="section-head">
-      <div class="eyebrow">Operational Structure</div>
-      <h2>Work Systems → Key Services → Programs</h2>
-      <p>How the City's work is organized, top to bottom, and how it's performing right now.</p>
-      <p>Expand a Work System to see its Key Services, then expand a Key Service to see the Programs delivered underneath it.</p>
+      <div class="eyebrow">Strategic Plan, With Operational Detail Built In</div>
+      <h2>Strategic Plan Goals → Key Services & Objectives → Programs</h2>
+      <p>Start at the Goal level and drill down. Each Goal expands into two groups: the Key Services that roll up to it directly, and the Objectives that roll up from their Programs. Expand either to go one level deeper.</p>
     </div>
 
     <div class="drill-col">
       <div class="drill-col-head">
-        <h3>Every Work System, drilled all the way down</h3>
+        <h3>Every Strategic Plan Goal, drilled all the way down</h3>
       </div>
       <div class="drill-col-body" id="ws-tree"></div>
       <div class="status-legend" id="status-legend" style="padding:0 20px 16px;"></div>
+      <div class="status-defs" style="margin:0 20px 20px;">
+        <div class="def-row"><dt>On Track —</dt> <dd>performance is at or above target, or within an agreed tolerance (e.g. within 5%).</dd></div>
+        <div class="def-row"><dt>At Risk —</dt> <dd>performance is below target but recoverable — within a moderate gap (e.g. 5–15% off target) or trending toward target.</dd></div>
+        <div class="def-row"><dt>Off Track —</dt> <dd>performance is significantly below target (e.g. more than 15% off) or has declined for two or more consecutive reporting periods.</dd></div>
+        <div class="def-row"><dt>No Data —</dt> <dd>no current measure has been recorded for this item.</dd></div>
+        <div class="def-row" style="margin-top:8px;"><dt>⏱ Stale —</dt> <dd>this item's status hasn't been updated in over 45 days; treat the badge as unverified until refreshed.</dd></div>
+      </div>
     </div>
   </div>
 
@@ -462,15 +522,60 @@ function rollupStatus(statuses){
 
 function programStatus(p){ return p.status || 'no-data'; }
 
+// Key Services carry their OWN distinct status — they are a "yellow box"
+// (distinct measures) in the framework, not an aggregate of Programs.
+// The Programs↔Key Service link is alignment only (dashed arrow), so it
+// intentionally does not feed into this.
 function keyServiceStatus(ks){
-  const progs = DATA.programs.filter(p => p.keyservice === ks.id);
-  if(progs.length > 0) return rollupStatus(progs.map(programStatus));
   return ks.status || 'no-data';
+}
+
+// Objectives DO aggregate from their Programs — this is the one real
+// "solid arrow" on the policy side of the framework. A Program can now
+// belong to more than one Objective, so this checks array membership.
+function objectiveStatus(ob){
+  const progs = DATA.programs.filter(p => Array.isArray(p.objectives) && p.objectives.includes(ob.id));
+  if(progs.length > 0) return rollupStatus(progs.map(programStatus));
+  return 'no-data';
 }
 
 function workSystemStatus(ws){
   const services = DATA.keyServices.filter(k => k.workSystem === ws.id);
   return rollupStatus(services.map(keyServiceStatus));
+}
+
+// Strategic Plan Goals aggregate directly from Key Services aligned to
+// them (the other "solid arrow" — Key Service → Goal, bypassing
+// Objectives entirely, per the framework). A Key Service can now belong
+// to more than one Goal, so this checks array membership.
+//
+// IMPORTANT: this is deliberately only ONE of two views of a Goal's
+// health. It says nothing about Program performance, because Programs
+// never roll up into a Goal directly (only through Objectives, which
+// are alignment-only). Displaying this alone would let a Goal read as
+// "fine" while every Program under it is failing. See
+// goalProgramViewStatus() below for the other half of the picture —
+// both should always be shown together, never just this one.
+function goalKeyServiceViewStatus(g){
+  const services = DATA.keyServices.filter(k => Array.isArray(k.goals) && k.goals.includes(g.id));
+  return rollupStatus(services.map(keyServiceStatus));
+}
+
+// The other half: how is this Goal doing from the Program/Objective
+// side? Rolls each aligned Objective's own Program-based status up one
+// more level. Kept as a fully separate number from the Key Service
+// view above — never blended into one badge.
+function goalProgramViewStatus(g){
+  const objs = DATA.objectives.filter(o => o.goal === g.id);
+  return rollupStatus(objs.map(objectiveStatus));
+}
+
+// Used only for sorting and the headline count — takes the worse of the
+// two views, so a Goal that's fine operationally but failing on the
+// Program side still surfaces as needing attention. The two views are
+// still always displayed separately; this is never shown as a badge.
+function goalOverallStatus(g){
+  return rollupStatus([goalKeyServiceViewStatus(g), goalProgramViewStatus(g)]);
 }
 
 function statusBadgeHTML(status){
@@ -545,8 +650,20 @@ function wireStatusTooltips(scope){
     el.addEventListener('mouseleave', hideTooltip);
     el.addEventListener('focus', ()=> showTooltip(el, el.dataset.tipId));
     el.addEventListener('blur', hideTooltip);
+    // Touch devices have no hover — tap to toggle instead.
+    el.addEventListener('click', e=>{
+      e.stopPropagation();
+      const tooltip = document.getElementById('hover-tooltip');
+      const isOpenForThis = tooltip.classList.contains('visible') && tooltip.dataset.ownerId === el.dataset.tipId;
+      if(isOpenForThis){ hideTooltip(); }
+      else{ showTooltip(el, el.dataset.tipId); tooltip.dataset.ownerId = el.dataset.tipId; }
+    });
   });
 }
+
+// Tapping anywhere outside an open tooltip closes it — needed since
+// touch devices have no hover-out event to rely on.
+document.addEventListener('click', ()=>{ hideTooltip(); });
 
 function renderStatusLegend(){
   document.getElementById('status-legend').innerHTML = Object.entries(STATUS_META)
@@ -560,8 +677,8 @@ function renderStats(){
     { n: DATA.workSystems.length, l: 'Work Systems', breakdown: statusBreakdownHTML(DATA.workSystems, workSystemStatus) },
     { n: DATA.keyServices.length, l: 'Key Services', breakdown: statusBreakdownHTML(DATA.keyServices, keyServiceStatus) },
     { n: DATA.programs.length, l: 'Programs', breakdown: statusBreakdownHTML(DATA.programs, programStatus) },
-    { n: DATA.goals.length, l: 'Strategic Plan Goals' },
-    { n: DATA.objectives.length, l: 'Objectives' },
+    { n: DATA.goals.length, l: 'Strategic Plan Goals', breakdown: statusBreakdownHTML(DATA.goals, goalStatus) },
+    { n: DATA.objectives.length, l: 'Objectives', breakdown: statusBreakdownHTML(DATA.objectives, objectiveStatus) },
   ];
   document.getElementById('stat-grid').innerHTML = stats.map(s=>`
     <div class="stat-card">
@@ -575,81 +692,306 @@ function renderStats(){
 }
 
 /* ---------- Work System → Key Service → Program tree ---------- */
-function renderWorkSystemTree(){
+/* ---------- Strategic Plan tree (primary view) ----------
+   Rooted at Strategic Plan Goals, not Work Systems. Each Goal expands
+   into two groups, matching the two solid-arrow rollups from the
+   framework: Key Services that roll up to it directly, and Objectives
+   that roll up from their Programs. Both groups are themselves
+   expandable one level further — Key Services reveal their related
+   Programs (alignment only), Objectives reveal their real Programs
+   (the actual rollup). A Key Service or Program aligned to more than
+   one Goal/Objective will legitimately appear more than once. */
+/* ---------- Headline synthesis ----------
+   One computed sentence, generated from the data (not hand-typed),
+   surfacing what actually needs attention before anyone clicks anything. */
+function renderHeadline(){
+  const banner = document.getElementById('headline-banner');
+  const offGoals = DATA.goals.filter(g=>goalOverallStatus(g)==='off-track');
+  const riskGoals = DATA.goals.filter(g=>goalOverallStatus(g)==='at-risk');
+  const troubled = offGoals.length + riskGoals.length;
+
+  // Find the worst-performing Key Services driving the problem, worst first.
+  // These are named as DISTINCT underlying issues, kept separate from the
+  // Goals-affected count above — one Key Service tagged to multiple Goals
+  // should read as one problem with broad reach, not several problems.
+  const offKS = DATA.keyServices.filter(k=>keyServiceStatus(k)==='off-track');
+  const riskKS = DATA.keyServices.filter(k=>keyServiceStatus(k)==='at-risk');
+  const driverItems = [...offKS, ...riskKS];
+  const drivers = driverItems.slice(0,3).map(k=>k.name);
+
+  let icon, cls, html;
+  if(troubled === 0){
+    icon = '✓'; cls = 'clear';
+    html = `<strong>All ${DATA.goals.length} Strategic Plan Goals are On Track</strong> this quarter — no immediate action needed.`;
+  } else {
+    icon = offGoals.length > 0 ? '⚠' : '•';
+    cls = offGoals.length > 0 ? 'critical' : 'caution';
+    const driverText = drivers.length
+      ? ` Rooted in ${driverItems.length} underlying issue${driverItems.length!==1?'s':''} — primarily <strong>${drivers.join(', ')}</strong>.`
+      : '';
+    html = `<strong>${troubled} of ${DATA.goals.length} Strategic Plan Goals</strong> show elevated risk this quarter
+      (${offGoals.length} Off Track, ${riskGoals.length} At Risk).${driverText}`;
+  }
+
+  banner.className = `headline-banner ${cls}`;
+  banner.innerHTML = `<span class="hb-icon">${icon}</span><span>${html}</span>`;
+}
+
+function goalSortWeight(status){
+  return status==='off-track' ? 0 : status==='at-risk' ? 1 : status==='on-track' ? 2 : 3;
+}
+
+function goalCompositionBar(g){
+  const services = DATA.keyServices.filter(k=>Array.isArray(k.goals) && k.goals.includes(g.id));
+  const counts = { 'on-track':0, 'at-risk':0, 'off-track':0, 'no-data':0 };
+  services.forEach(k=>counts[keyServiceStatus(k)]++);
+  const total = services.length;
+  if(total === 0) return `<div class="bar-track-wide"><span class="bar-seg" style="width:100%;background:var(--line)"></span></div>`;
+  const segs = Object.entries(counts).filter(([,n])=>n>0).map(([status,n])=>
+    `<span class="bar-seg" style="width:${(n/total*100).toFixed(1)}%;background:${statusDotColor(status)}" title="${n} ${STATUS_META[status].label}"></span>`
+  ).join('');
+  return `<div class="bar-track-wide">${segs}</div>`;
+}
+
+// Same idea as goalCompositionBar, but for the Objective/Program side —
+// composition is by Objective (each Objective's own Program-rolled status),
+// kept as a visually separate bar rather than merged into the one above.
+function goalObjectiveCompositionBar(g){
+  const objs = DATA.objectives.filter(o=>o.goal===g.id);
+  const counts = { 'on-track':0, 'at-risk':0, 'off-track':0, 'no-data':0 };
+  objs.forEach(o=>counts[objectiveStatus(o)]++);
+  const total = objs.length;
+  if(total === 0) return `<div class="bar-track-wide"><span class="bar-seg" style="width:100%;background:var(--line)"></span></div>`;
+  const segs = Object.entries(counts).filter(([,n])=>n>0).map(([status,n])=>
+    `<span class="bar-seg" style="width:${(n/total*100).toFixed(1)}%;background:${statusDotColor(status)}" title="${n} ${STATUS_META[status].label}"></span>`
+  ).join('');
+  return `<div class="bar-track-wide">${segs}</div>`;
+}
+
+function renderGoalSummary(){
+  const sorted = [...DATA.goals].sort((a,b)=>goalSortWeight(goalOverallStatus(a)) - goalSortWeight(goalOverallStatus(b)));
+  const grid = document.getElementById('goal-summary');
+
+  grid.innerHTML = sorted.map(g=>{
+    const ksStatus = goalKeyServiceViewStatus(g);
+    const progStatus = goalProgramViewStatus(g);
+    const ksCount = DATA.keyServices.filter(k=>Array.isArray(k.goals) && k.goals.includes(g.id)).length;
+    const obCount = DATA.objectives.filter(o=>o.goal===g.id).length;
+    return `
+      <button class="goal-card" data-goal-jump="${g.id}" style="border-top-color:${g.color}">
+        <div class="goal-card-top">
+          <span class="goal-card-name">${g.name}</span>
+        </div>
+        <div class="dual-status" style="margin-bottom:8px;">
+          <div class="dual-status-item"><span class="dual-label">Key Services</span>${statusBadgeHTML(ksStatus)}</div>
+        </div>
+        ${goalCompositionBar(g)}
+        <div class="dual-status" style="margin:10px 0 8px;">
+          <div class="dual-status-item"><span class="dual-label">Programs</span>${statusBadgeHTML(progStatus)}</div>
+        </div>
+        ${goalObjectiveCompositionBar(g)}
+        <div class="goal-card-meta" style="margin-top:10px;">${ksCount} key service${ksCount!==1?'s':''} · ${obCount} objective${obCount!==1?'s':''}</div>
+      </button>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('[data-goal-jump]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const target = document.getElementById(`goalnode-${btn.dataset.goalJump}`);
+      if(!target) return;
+      target.classList.add('open');
+      target.scrollIntoView({ behavior:'smooth', block:'start' });
+      target.style.transition = 'box-shadow .3s ease';
+      target.style.boxShadow = '0 0 0 3px var(--sage)';
+      setTimeout(()=>{ target.style.boxShadow = ''; }, 1400);
+    });
+  });
+}
+
+function primaryMetricHTML(item){
+  const metrics = (item.details && item.details.metrics) || [];
+  const m = metrics.find(m=>m.target) || metrics[0];
+  if(!m) return '';
+  return `<span class="inline-metric">${m.value}${m.target ? ` <span class="im-target">/ target ${m.target}</span>` : ''}</span>`;
+}
+
+// Baldrige's measurement criteria call for data that's timely as well as
+// valid — a status badge with no indication of freshness invites false
+// confidence. This flags anything whose statusUpdated date is older than
+// the threshold. Items without a statusUpdated field show nothing extra
+// (same graceful-fallback pattern as everywhere else in this dashboard),
+// rather than assuming staleness for data we simply don't have a date for.
+const STALE_THRESHOLD_DAYS = 45;
+function staleFlagHTML(item){
+  if(!item.statusUpdated) return '';
+  const days = Math.floor((Date.now() - new Date(item.statusUpdated).getTime()) / 86400000);
+  if(days <= STALE_THRESHOLD_DAYS) return '';
+  return `<span class="stale-flag" title="Status last updated ${item.statusUpdated}">⏱ ${days}d stale</span>`;
+}
+
+function renderStrategicTree(){
   const root = document.getElementById('ws-tree');
 
-  root.innerHTML = DATA.workSystems.map(ws=>{
-    const services = DATA.keyServices.filter(k=>k.workSystem===ws.id);
+  const sortedGoals = [...DATA.goals].sort((a,b)=>goalSortWeight(goalOverallStatus(a)) - goalSortWeight(goalOverallStatus(b)));
 
-    const ksHTML = services.map(ks=>{
-      const progs = DATA.programs.filter(p=>p.keyservice===ks.id);
-      const progHTML = progs.length
-        ? progs.map(p=>`
-            <div class="leaf-card">
-              <span class="box-tag gold">Program</span>
-              <span style="flex:1;">${p.name}</span>
-              ${statusBadgeHTML(programStatus(p))}
-              <button class="detail-btn" data-kind="program" data-id="${p.id}">Details</button>
+  root.innerHTML = sortedGoals.map(g=>{
+    const ksViewStatus = goalKeyServiceViewStatus(g);
+    const progViewStatus = goalProgramViewStatus(g);
+    const overallStatus = goalOverallStatus(g);
+    const alignedKS = DATA.keyServices
+      .filter(k=>Array.isArray(k.goals) && k.goals.includes(g.id))
+      .sort((a,b)=>goalSortWeight(keyServiceStatus(a)) - goalSortWeight(keyServiceStatus(b)));
+    const objs = DATA.objectives
+      .filter(o=>o.goal===g.id)
+      .sort((a,b)=>goalSortWeight(objectiveStatus(a)) - goalSortWeight(objectiveStatus(b)));
+
+    const ksHTML = alignedKS.length
+      ? alignedKS.map(ks=>{
+          const ws = DATA.workSystems.find(w=>w.id===ks.workSystem);
+          const relatedProgs = DATA.programs.filter(p=>p.keyservice===ks.id);
+          const progHTML = relatedProgs.length
+            ? relatedProgs.map(p=>{
+                const obs = (p.objectives||[]).map(oid=>DATA.objectives.find(o=>o.id===oid)).filter(Boolean);
+                const obTags = obs.map(o=>`<span class="align-tag" data-obj-tip="${o.id}">⟵┄ ${o.name}</span>`).join('');
+                return `
+                  <div class="leaf-card">
+                    <span class="box-tag gold">Program</span>
+                    <span style="flex:1;">${p.name}</span>
+                    ${obTags}
+                    ${primaryMetricHTML(p)}
+                    ${statusBadgeHTML(programStatus(p))}
+                    <button class="detail-btn" data-kind="program" data-id="${p.id}">Details</button>
+                  </div>
+                `;
+              }).join('')
+            : `<div class="empty-note">No related Programs recorded yet.</div>`;
+
+          const ksStatus = keyServiceStatus(ks);
+          return `
+            <div class="node-item ks-node${ksStatus==='off-track' ? ' open' : ''}">
+              <div class="node-header" role="button" tabindex="0">
+                <span class="left">
+                  <span class="box-tag gold">Key Service</span>
+                  <span class="name">${ks.name}</span>
+                  ${ws ? `<span class="align-tag">${ws.name}</span>` : ''}
+                  ${primaryMetricHTML(ks)}
+                  ${staleFlagHTML(ks)}
+                  ${statusBadgeHTML(ksStatus)}
+                </span>
+                <span class="meta">${relatedProgs.length} related program${relatedProgs.length!==1?'s':''}
+                  <button class="detail-btn" data-kind="ks" data-id="${ks.id}">Details</button>
+                  <span class="chevron">▾</span>
+                </span>
+              </div>
+              <div class="node-body">
+                <div class="goal-subhead">Related Programs <span style="text-transform:none;font-weight:500;">(alignment only — see each Program's real Objective(s) above)</span></div>
+                ${progHTML}
+              </div>
             </div>
-          `).join('')
-        : `<div class="empty-note">No programs recorded under this Key Service yet.</div>`;
+          `;
+        }).join('')
+      : `<div class="empty-note">No Key Services directly aligned to this Goal yet.</div>`;
 
-      return `
-        <div class="node-item ks-node">
-          <div class="node-header" role="button" tabindex="0">
-            <span class="left">
-              <span class="box-tag gold">Key Service</span>
-              <span class="name">${ks.name}</span>
-              ${statusBadgeHTML(keyServiceStatus(ks))}
-            </span>
-            <span class="meta">
-              ${progs.length} program${progs.length!==1?'s':''}
-              <button class="detail-btn" data-kind="ks" data-id="${ks.id}">Details</button>
-              <span class="chevron">▾</span>
-            </span>
-          </div>
-          <div class="node-body">${progHTML}</div>
-        </div>
-      `;
-    }).join('');
+    const objHTML = objs.length
+      ? objs.map(o=>{
+          const progs = DATA.programs.filter(p=>Array.isArray(p.objectives) && p.objectives.includes(o.id));
+          const progHTML = progs.length
+            ? progs.map(p=>`
+                <div class="leaf-card">
+                  <span class="box-tag gold">Program</span>
+                  <span style="flex:1;">${p.name}</span>
+                  ${primaryMetricHTML(p)}
+                  ${statusBadgeHTML(programStatus(p))}
+                  <button class="detail-btn" data-kind="program" data-id="${p.id}">Details</button>
+                </div>
+              `).join('')
+            : `<div class="empty-note">No Programs recorded under this Objective yet.</div>`;
+
+          const obStatus = objectiveStatus(o);
+          return `
+            <div class="node-item ks-node${obStatus==='off-track' ? ' open' : ''}">
+              <div class="node-header" role="button" tabindex="0">
+                <span class="left">
+                  <span class="box-tag">Objective</span>
+                  <span class="name">${o.name}</span>
+                  ${statusBadgeHTML(obStatus)}
+                </span>
+                <span class="meta">${progs.length} program${progs.length!==1?'s':''} <span class="chevron">▾</span></span>
+              </div>
+              <div class="node-body">${progHTML}</div>
+            </div>
+          `;
+        }).join('')
+      : `<div class="empty-note">No Objectives recorded under this Goal yet.</div>`;
 
     return `
-      <div class="node-item ws-node">
+      <div class="node-item ws-node${overallStatus!=='on-track' ? ' open' : ''}" id="goalnode-${g.id}">
         <div class="node-header" role="button" tabindex="0">
           <span class="left">
-            <span class="box-tag">Work System</span>
-            <span class="name">${ws.name}</span>
-            ${statusBadgeHTML(workSystemStatus(ws))}
+            <span class="box-tag">Goal</span>
+            <span class="name">${g.name}</span>
+            <div class="dual-status">
+              <div class="dual-status-item"><span class="dual-label">Key Svcs</span>${statusBadgeHTML(ksViewStatus)}</div>
+              <div class="dual-status-item"><span class="dual-label">Programs</span>${statusBadgeHTML(progViewStatus)}</div>
+            </div>
           </span>
-          <span class="meta">${services.length} key service${services.length!==1?'s':''} <span class="chevron">▾</span></span>
+          <span class="meta">${alignedKS.length} key service${alignedKS.length!==1?'s':''} · ${objs.length} objective${objs.length!==1?'s':''} <span class="chevron">▾</span></span>
         </div>
-        <div class="node-body">${ksHTML || `<div class="empty-note">No Key Services recorded under this Work System yet.</div>`}</div>
+        <div class="node-body">
+          <div class="goal-subhead">Key Services aligned directly to this Goal</div>
+          ${ksHTML}
+          <div class="goal-subhead">Objectives under this Goal</div>
+          ${objHTML}
+        </div>
       </div>
     `;
   }).join('');
 
   wireAccordions(root);
   wireDetailButtons(root);
+  wireObjectiveTooltips(root);
 }
 
-/* ---------- Strategic Plan reference (Goals → Objectives) ---------- */
-function renderGoalTree(){
-  const root = document.getElementById('goal-tree');
-  root.innerHTML = DATA.goals.map(g=>{
-    const objs = DATA.objectives.filter(o=>o.goal===g.id);
-    return `
-      <div class="goal-block">
-        <div class="goal-head">
-          <span class="goal-dot" style="background:${g.color}"></span>
-          <span class="name">${g.name}</span>
-          <span class="count">${objs.length} objective${objs.length!==1?'s':''}</span>
-        </div>
-        <div class="obj-list">
-          ${objs.map(o=>`<div class="obj">${o.name}</div>`).join('') || '<div class="obj">No objectives listed yet.</div>'}
-        </div>
-      </div>
-    `;
-  }).join('');
+/* ---------- Objective hover tooltip on Program align-tags ----------
+   Reuses the same tooltip element as the status-breakdown cards, so
+   hovering an Objective tag on a Program shows that Objective's real,
+   full rollup (status + every Program under it) without navigating
+   anywhere. */
+function wireObjectiveTooltips(scope){
+  scope.querySelectorAll('[data-obj-tip]').forEach(el=>{
+    const show = ()=>{
+      const ob = DATA.objectives.find(o=>o.id===el.dataset.objTip);
+      if(!ob) return;
+      const progs = DATA.programs.filter(p=>Array.isArray(p.objectives) && p.objectives.includes(ob.id));
+      const status = objectiveStatus(ob);
+      const tooltip = document.getElementById('hover-tooltip');
+      tooltip.innerHTML = `
+        <div class="tt-head"><span class="status-dot" style="background:${statusDotColor(status)}"></span>${ob.name}</div>
+        <ul class="tt-list">${progs.map(p=>`<li>${p.name} — ${STATUS_META[programStatus(p)].label}</li>`).join('') || '<li>No Programs recorded yet.</li>'}</ul>
+      `;
+      const rect = el.getBoundingClientRect();
+      tooltip.style.left = `${rect.left}px`;
+      tooltip.style.top = `${rect.bottom + 8}px`;
+      tooltip.classList.add('visible');
+      requestAnimationFrame(()=>{
+        const tRect = tooltip.getBoundingClientRect();
+        if(tRect.right > window.innerWidth - 12){ tooltip.style.left = `${Math.max(12, window.innerWidth - tRect.width - 12)}px`; }
+      });
+    };
+    el.setAttribute('tabindex','0');
+    el.addEventListener('mouseenter', show);
+    el.addEventListener('mouseleave', hideTooltip);
+    el.addEventListener('focus', show);
+    el.addEventListener('blur', hideTooltip);
+    // Touch devices have no hover — tap to toggle instead.
+    el.addEventListener('click', e=>{
+      e.stopPropagation();
+      const tooltip = document.getElementById('hover-tooltip');
+      const isOpenForThis = tooltip.classList.contains('visible') && tooltip.dataset.ownerId === el.dataset.objTip;
+      if(isOpenForThis){ hideTooltip(); }
+      else{ show(); tooltip.dataset.ownerId = el.dataset.objTip; }
+    });
+  });
 }
 
 function wireAccordions(scope){
@@ -737,10 +1079,11 @@ function init(){
   }
 
   renderKPIs();
+  renderHeadline();
+  renderGoalSummary();
   renderStats();
   renderStatusLegend();
-  renderWorkSystemTree();
-  renderGoalTree();
+  renderStrategicTree();
   wireModalChrome();
 }
 
